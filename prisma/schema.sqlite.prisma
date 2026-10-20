@@ -1,0 +1,306 @@
+// TechIssue Hub - SQLite Development Schema (Zero-dependency Local Option)
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  avatarUrl    String?
+  role         String   @default("DEVELOPER") // ADMIN, PROJECT_MANAGER, DEVELOPER, SEO_TEAM, QA_TESTER, DEVOPS, VIEWER
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  departments       UserDepartment[]
+  managedProjects   Project[]            @relation("ProjectManager")
+  projectMembers    ProjectMember[]
+  createdIssues     Issue[]              @relation("IssueCreator")
+  assignedIssues    Issue[]              @relation("PrimaryAssignee")
+  assignmentHistory IssueAssignment[]
+  investigations    IssueInvestigation[]
+  resolutions       IssueResolution[]    @relation("IssueResolver")
+  verifications     IssueResolution[]    @relation("IssueVerifier")
+  comments          IssueComment[]
+  activityLogs      IssueActivityLog[]
+  notifications     Notification[]
+}
+
+model Department {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  code        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users      UserDepartment[]
+  issues     Issue[]
+  categories Category[]
+}
+
+model UserDepartment {
+  id           String     @id @default(cuid())
+  userId       String
+  departmentId String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, departmentId])
+}
+
+model Project {
+  id          String   @id @default(cuid())
+  name        String
+  code        String   @unique
+  description String?
+  projectUrl  String?
+  projectType String   @default("Web")
+  status      String   @default("ACTIVE")
+  managerId   String
+  manager     User     @relation("ProjectManager", fields: [managerId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  members ProjectMember[]
+  issues  Issue[]
+}
+
+model ProjectMember {
+  id        String   @id @default(cuid())
+  projectId String
+  userId    String
+  role      String   @default("CONTRIBUTOR")
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, userId])
+}
+
+model IssueSequence {
+  year      Int @id
+  lastValue Int @default(0)
+}
+
+model Issue {
+  id          String   @id @default(cuid())
+  issueNumber String   @unique // e.g. ISS-2026-0001
+  title       String
+  description String
+  status      String   @default("OPEN") // OPEN, TRIAGED, ASSIGNED, IN_PROGRESS, BLOCKED, FIX_READY, IN_VERIFICATION, RESOLVED, CLOSED, REOPENED
+  priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, CRITICAL, URGENT
+  version     Int      @default(1)
+
+  projectId    String
+  project      Project    @relation(fields: [projectId], references: [id])
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  categoryId   String
+  category     Category   @relation(fields: [categoryId], references: [id])
+
+  createdById String
+  creator     User    @relation("IssueCreator", fields: [createdById], references: [id])
+  assigneeId  String?
+  assignee    User?   @relation("PrimaryAssignee", fields: [assigneeId], references: [id])
+
+  environment      String?
+  expectedBehavior String?
+  actualBehavior   String?
+  reproSteps       String?
+  errorMessages    String?
+  affectedUrl      String?
+  gitBranch        String?
+  gitPullRequest   String?
+  gitCommitSha     String?
+
+  isKnowledgeBase Boolean @default(false)
+  kbSummary       String?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  resolvedAt DateTime?
+
+  assignments       IssueAssignment[]
+  investigations    IssueInvestigation[]
+  resolution        IssueResolution?
+  comments          IssueComment[]
+  attachments       IssueAttachment[]
+  activityLogs      IssueActivityLog[]
+  tags              IssueTag[]
+  outgoingRelations IssueRelation[]      @relation("SourceIssue")
+  incomingRelations IssueRelation[]      @relation("TargetIssue")
+
+  @@index([status])
+  @@index([priority])
+  @@index([projectId])
+  @@index([departmentId])
+  @@index([categoryId])
+  @@index([assigneeId])
+  @@index([isKnowledgeBase])
+  @@index([createdAt])
+}
+
+model Category {
+  id           String     @id @default(cuid())
+  name         String
+  code         String
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  issues       Issue[]
+
+  @@unique([departmentId, code])
+}
+
+model Tag {
+  id     String     @id @default(cuid())
+  name   String     @unique
+  issues IssueTag[]
+}
+
+model IssueTag {
+  issueId String
+  tagId   String
+  issue   Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  tag     Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([issueId, tagId])
+}
+
+model IssueAssignment {
+  id         String   @id @default(cuid())
+  issueId    String
+  assigneeId String
+  assignedBy String
+  assignedAt DateTime @default(now())
+  notes      String?
+  issue      Issue    @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  assignee   User     @relation(fields: [assigneeId], references: [id])
+
+  @@index([issueId])
+}
+
+model IssueInvestigation {
+  id              String   @id @default(cuid())
+  issueId         String
+  investigatorId  String
+  observation     String
+  hypothesis      String?
+  diagnosticSteps String?
+  toolsUsed       String?
+  findings        String
+  failedAttempts  String?
+  evidence        String?
+  conclusion      String?
+  createdAt       DateTime @default(now())
+
+  issue        Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  investigator User  @relation(fields: [investigatorId], references: [id])
+
+  @@index([issueId])
+}
+
+model IssueResolution {
+  id                    String    @id @default(cuid())
+  issueId               String    @unique
+  rootCause             String
+  permanentSolution     String
+  workaround            String?
+  filesChanged          String?
+  configChanges         String?
+  databaseChanges       String?
+  deploymentSteps       String?
+  regressionPrevention  String?
+  verificationChecklist String?
+  metricsBeforeAfter    String?
+  finalSummary          String?
+
+  resolverId         String
+  resolver           User      @relation("IssueResolver", fields: [resolverId], references: [id])
+  verifierId         String?
+  verifier           User?     @relation("IssueVerifier", fields: [verifierId], references: [id])
+  verifiedAt         DateTime?
+  verificationPassed Boolean?
+  verificationNotes  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+}
+
+model IssueRelation {
+  id            String   @id @default(cuid())
+  sourceIssueId String
+  targetIssueId String
+  type          String   // BLOCKS, IS_BLOCKED_BY, DUPLICATES, IS_DUPLICATED_BY, RELATES_TO
+  createdAt     DateTime @default(now())
+
+  sourceIssue Issue @relation("SourceIssue", fields: [sourceIssueId], references: [id], onDelete: Cascade)
+  targetIssue Issue @relation("TargetIssue", fields: [targetIssueId], references: [id], onDelete: Cascade)
+
+  @@unique([sourceIssueId, targetIssueId, type])
+}
+
+model IssueAttachment {
+  id           String   @id @default(cuid())
+  issueId      String
+  fileName     String
+  fileSize     Int
+  mimeType     String
+  storagePath  String
+  uploadedById String
+  createdAt    DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+}
+
+model IssueComment {
+  id         String   @id @default(cuid())
+  issueId    String
+  authorId   String
+  content    String
+  isInternal Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  issue  Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  author User  @relation(fields: [authorId], references: [id])
+}
+
+model IssueActivityLog {
+  id        String   @id @default(cuid())
+  issueId   String
+  actorId   String
+  action    String
+  fromValue String?
+  toValue   String?
+  comment   String?
+  createdAt DateTime @default(now())
+
+  issue Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  actor User  @relation(fields: [actorId], references: [id])
+
+  @@index([issueId, createdAt])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  linkUrl   String?
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+}

@@ -25,3 +25,106 @@ body {
     text-wrap: balance;
   }
 }
+
+/* ==========================================================================
+   Modern Custom Scrollbars
+   ========================================================================== */
+
+/* Universal sleek scrollbar for modern browsers */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.4) transparent;
+}
+
+/* WebKit & Blink browsers (Chrome, Edge, Safari, Opera) */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.35);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.7);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* High-finish dark surface scrollbar (Sidebar, code blocks, dark terminals) */
+.custom-scrollbar-dark,
+.dark-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(71, 85, 105, 0.5) transparent;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar,
+.dark-scroll::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-track,
+.dark-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb,
+.dark-scroll::-webkit-scrollbar-thumb {
+  background: rgba(71, 85, 105, 0.55);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar-dark::-webkit-scrollbar-thumb:hover,
+.dark-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(129, 140, 248, 0.7); /* Subtle indigo accent on hover */
+}
+
+/* Light surface scrollbar (Dropdowns, modals, command palette) */
+.custom-scrollbar,
+.custom-scrollbar-light {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(203, 213, 225, 0.9) transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar,
+.custom-scrollbar-light::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track,
+.custom-scrollbar-light::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb,
+.custom-scrollbar-light::-webkit-scrollbar-thumb {
+  background: rgba(203, 213, 225, 0.85);
+  border-radius: 9999px;
+  transition: background-color 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover,
+.custom-scrollbar-light::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.95);
+}
+
+/* Utility to completely hide scrollbar while preserving scroll functionality */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
